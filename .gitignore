@@ -125,11 +125,6 @@ toy*.ipynb
 toy*.yml
 *.tmp
 
-shell/jina-wizard.sh
-/junit/
-/tests/junit/
-/docs/chapters/proto/docs.md
-
 **/.jina/
 
 # Local model downloads
