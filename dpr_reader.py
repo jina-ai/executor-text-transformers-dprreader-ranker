@@ -64,7 +64,9 @@ class DPRReaderRanker(Executor):
         if not base_tokenizer_model:
             base_tokenizer_model = pretrained_model_name_or_path
 
-        self.tokenizer = DPRReaderTokenizerFast.from_pretrained(base_tokenizer_model)
+        self.tokenizer = DPRReaderTokenizerFast.from_pretrained(
+            base_tokenizer_model
+        )
         self.model = DPRReader.from_pretrained(pretrained_model_name_or_path)
 
         self.model = self.model.to(torch.device(self.device)).eval()
@@ -105,26 +107,33 @@ class DPRReaderRanker(Executor):
         if not docs:
             return None
 
-        traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
+        traversal_paths = parameters.get(
+            'traversal_paths',
+            self.traversal_paths
+        )
         batch_size = parameters.get('batch_size', self.batch_size)
 
-        for doc in docs.traverse_flat(traversal_paths):
-            if not getattr(doc, 'text'):
-                continue
-
+        for doc in docs.traverse_flat(traversal_paths, filter_fn=lambda x: bool(x.text)):
             new_matches = []
 
             doc_arr = DocumentArray([doc])
-            # match_batches_generator = doc_arr.batch(
-            #     traversal_paths=['m'],
-            #     batch_size=batch_size,
-            #     require_attr='text',
-            # )
-            match_batches_generator = doc_arr.traverse_flat(traversal_paths=['m'], filter_fn= lambda x: bool(x)).batch(batch_size=batch_size)
+
+            match_batches_generator = doc_arr.traverse_flat(
+                traversal_paths=['m'],
+                filter_fn=lambda x: bool(x.text)
+            ).batch(batch_size=batch_size)
+
             for matches in match_batches_generator:
-                question, titles = self._prepare_inputs(doc_arr[0].text, matches)
+                question, titles = self._prepare_inputs(
+                    doc_arr[0].text,
+                    matches
+                )
                 with torch.inference_mode():
-                    new_matches += self._get_new_matches(question, matches, titles)
+                    new_matches += self._get_new_matches(
+                        question,
+                        matches,
+                        titles
+                    )
 
             # Make sure answers are sorted by relevance scores
             new_matches.sort(
@@ -182,7 +191,9 @@ class DPRReaderRanker(Executor):
             new_match.scores['relevance_score'] = _logistic_fn(
                 span.relevance_score.cpu()
             )
-            new_match.scores['span_score'] = _logistic_fn(span.span_score.cpu())
+            new_match.scores['span_score'] = _logistic_fn(
+                span.span_score.cpu()
+            )
             if titles:
                 new_match.tags['title'] = titles[span.doc_id]
             new_matches.append(new_match)
