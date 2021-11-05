@@ -108,19 +108,17 @@ class DPRReaderRanker(Executor):
         traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
         batch_size = parameters.get('batch_size', self.batch_size)
 
-        for doc in docs.traverse_flat(traversal_paths):
-            if not getattr(doc, 'text'):
-                continue
-
+        for doc in docs.traverse_flat(
+            traversal_paths, filter_fn=lambda x: bool(x.text)
+        ):
             new_matches = []
 
             doc_arr = DocumentArray([doc])
-            # match_batches_generator = doc_arr.batch(
-            #     traversal_paths=['m'],
-            #     batch_size=batch_size,
-            #     require_attr='text',
-            # )
-            match_batches_generator = doc_arr.traverse_flat(traversal_paths=['m'], filter_fn= lambda x: bool(x)).batch(batch_size=batch_size)
+
+            match_batches_generator = doc_arr.traverse_flat(
+                traversal_paths=['m'], filter_fn=lambda x: bool(x.text)
+            ).batch(batch_size=batch_size)
+
             for matches in match_batches_generator:
                 question, titles = self._prepare_inputs(doc_arr[0].text, matches)
                 with torch.inference_mode():
@@ -139,7 +137,7 @@ class DPRReaderRanker(Executor):
             doc_arr[0].matches = new_matches
 
     def _prepare_inputs(
-            self, question: str, matches: DocumentArray
+        self, question: str, matches: DocumentArray
     ) -> Tuple[str, List[str], Optional[List[str]]]:
 
         titles = None
@@ -155,7 +153,7 @@ class DPRReaderRanker(Executor):
         return question, titles
 
     def _get_new_matches(
-            self, question: str, matches: DocumentArray, titles: Optional[List[str]]
+        self, question: str, matches: DocumentArray, titles: Optional[List[str]]
     ) -> List[Document]:
         texts = matches.get_attributes('text')
         encoded_inputs = self.tokenizer(

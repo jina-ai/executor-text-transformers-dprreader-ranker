@@ -4,8 +4,9 @@ __license__ = "Apache-2.0"
 import subprocess
 
 import pytest
-from dpr_reader import DPRReaderRanker
 from jina import Document, DocumentArray, Flow
+
+from dpr_reader import DPRReaderRanker
 
 
 @pytest.mark.parametrize('request_size', [1, 8, 50])
