@@ -29,7 +29,7 @@ class DPRReaderRanker(Executor):
         title_tag_key: Optional[str] = None,
         num_spans_per_match: int = 2,
         max_length: Optional[int] = None,
-        traversal_paths: Iterable[str] = ('r',),
+        traversal_paths: str = 'r',
         batch_size: int = 32,
         device: str = 'cpu',
         *args,
@@ -99,7 +99,7 @@ class DPRReaderRanker(Executor):
             initialization, the matches must also have a title (under this tag).
         :param parameters: dictionary to define the `traversal_paths` and the
             `batch_size`. For example
-            `parameters={'traversal_paths': ['r'], 'batch_size': 10}`
+            `parameters={'traversal_paths': 'r', 'batch_size': 10}`
         """
 
         if not docs:
@@ -116,7 +116,7 @@ class DPRReaderRanker(Executor):
             doc_arr = DocumentArray([doc])
 
             match_batches_generator = doc_arr.traverse_flat(
-                traversal_paths=['m'], filter_fn=lambda x: bool(x.text)
+                traversal_paths='m', filter_fn=lambda x: bool(x.text)
             ).batch(batch_size=batch_size)
 
             for matches in match_batches_generator:

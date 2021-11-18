@@ -164,19 +164,19 @@ def test_batch_size(
 
 
 @pytest.mark.parametrize('example_docs', [10], indirect=['example_docs'])
-@pytest.mark.parametrize('traversal_paths', [['r'], ['m'], ['m', 'c']])
+@pytest.mark.parametrize('traversal_paths', ['r','m','m,c'])
 def test_traversal_paths(
     basic_ranker: DPRReaderRanker,
     traversal_paths: List[str],
     example_docs: DocumentArray,
 ):
     # Set up document structure
-    if traversal_paths == ['r']:
+    if traversal_paths == 'r':
         docs = example_docs
-    elif traversal_paths == ['m']:
+    elif traversal_paths == 'm':
         docs = DocumentArray([Document()])
         docs[0].matches.extend(example_docs)
-    elif traversal_paths == ['m', 'c']:
+    elif traversal_paths == 'm,c':
         docs = DocumentArray([Document()])
         docs[0].matches.extend(example_docs[:5])
         docs[0].chunks.extend(example_docs[5:])
