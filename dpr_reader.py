@@ -1,8 +1,9 @@
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from jina import Document, DocumentArray, Executor, requests
+from docarray import Document, DocumentArray
+from jina import Executor, requests
 from transformers import DPRReader, DPRReaderTokenizerFast
 
 
@@ -142,7 +143,7 @@ class DPRReaderRanker(Executor):
 
         titles = None
         if self.title_tag_key:
-            titles = matches.get_attributes(f'tags__{self.title_tag_key}')
+            titles = matches[:, f'tags__{self.title_tag_key}']
 
             if len(titles) != len(matches) or None in titles:
                 raise ValueError(
@@ -155,7 +156,7 @@ class DPRReaderRanker(Executor):
     def _get_new_matches(
         self, question: str, matches: DocumentArray, titles: Optional[List[str]]
     ) -> List[Document]:
-        texts = matches.get_attributes('text')
+        texts = matches[:, 'text']
         encoded_inputs = self.tokenizer(
             questions=[question] * len(texts),
             titles=titles,
@@ -176,11 +177,11 @@ class DPRReaderRanker(Executor):
         new_matches = []
         for idx, span in enumerate(best_spans):
             new_match = Document(text=span.text)
-            new_match.update(matches[span.doc_id], fields=['tags'])
-            new_match.scores['relevance_score'] = _logistic_fn(
+            new_match.tags.update(matches[span.doc_id].tags)
+            new_match.scores['relevance_score'].value = _logistic_fn(
                 span.relevance_score.cpu()
             )
-            new_match.scores['span_score'] = _logistic_fn(span.span_score.cpu())
+            new_match.scores['span_score'].value = _logistic_fn(span.span_score.cpu())
             if titles:
                 new_match.tags['title'] = titles[span.doc_id]
             new_matches.append(new_match)

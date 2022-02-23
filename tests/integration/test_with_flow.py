@@ -28,7 +28,7 @@ def test_integration(request_size: int):
             return_results=True,
         )
 
-    assert sum(len(resp_batch.docs) for resp_batch in resp) == 50
+    assert len(resp) == 50
 
 
 @pytest.mark.docker
