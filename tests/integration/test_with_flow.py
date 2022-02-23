@@ -48,7 +48,7 @@ def test_docker_runtime_gpu(build_docker_image_gpu: str):
         subprocess.run(
             [
                 'jina',
-                'pea',
+                'pod',
                 f'--uses=docker://{build_docker_image_gpu}',
                 '--gpus',
                 'all',
