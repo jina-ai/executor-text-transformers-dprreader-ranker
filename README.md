@@ -15,7 +15,7 @@ Here's a simple example of usage for this executor
 
 ```python
 from jina import Document, Flow
-from jina.types.request import Response
+from jina.types.request.data import Response
 
 
 question = Document(text='When was Napoleon born?')
@@ -32,7 +32,7 @@ matches = [
 question.matches.extend(matches)
 
 f = Flow().add(
-    uses='jinahub+docker://DPRReaderRanker', uses_with={'num_spans_per_match': 1}
+    uses='jinahub+docker://deaReaderRanker', uses_with={'num_spans_per_match': 1}
 )
 
 
