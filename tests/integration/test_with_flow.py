@@ -25,7 +25,6 @@ def test_integration(request_size: int):
             on='/search',
             inputs=docs,
             request_size=request_size,
-            # return_results=True,
         )
 
     assert len(resp) == 50
