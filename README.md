@@ -32,7 +32,7 @@ matches = [
 question.matches.extend(matches)
 
 f = Flow().add(
-    uses='jinahub+docker://deaReaderRanker', uses_with={'num_spans_per_match': 1}
+    uses='jinahub+docker://DPRReaderRanker', uses_with={'num_spans_per_match': 1}
 )
 
 
