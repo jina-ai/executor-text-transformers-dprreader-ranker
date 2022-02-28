@@ -25,10 +25,9 @@ def test_integration(request_size: int):
             on='/search',
             inputs=docs,
             request_size=request_size,
-            return_results=True,
         )
 
-    assert sum(len(resp_batch.docs) for resp_batch in resp) == 50
+    assert len(resp) == 50
 
 
 @pytest.mark.docker
@@ -48,7 +47,7 @@ def test_docker_runtime_gpu(build_docker_image_gpu: str):
         subprocess.run(
             [
                 'jina',
-                'pea',
+                'pod',
                 f'--uses=docker://{build_docker_image_gpu}',
                 '--gpus',
                 'all',

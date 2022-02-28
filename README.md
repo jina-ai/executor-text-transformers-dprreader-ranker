@@ -15,7 +15,7 @@ Here's a simple example of usage for this executor
 
 ```python
 from jina import Document, Flow
-from jina.types.request import Response
+from jina.types.request.data import Response
 
 
 question = Document(text='When was Napoleon born?')

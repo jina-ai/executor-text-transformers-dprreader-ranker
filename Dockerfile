@@ -1,4 +1,4 @@
-FROM jinaai/jina:2-py37-perf
+FROM jinaai/jina:3-py37-perf
 
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
