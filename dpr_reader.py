@@ -5,7 +5,7 @@ import torch
 from docarray import Document, DocumentArray
 from jina import Executor, requests
 from transformers import DPRReader, DPRReaderTokenizerFast
-
+import warnings
 
 def _logistic_fn(x: np.ndarray) -> List[float]:
     """Compute the logistic function"""
@@ -30,7 +30,8 @@ class DPRReaderRanker(Executor):
         title_tag_key: Optional[str] = None,
         num_spans_per_match: int = 2,
         max_length: Optional[int] = None,
-        traversal_paths: str = 'r',
+        access_paths: str = 'r',
+        traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         device: str = 'cpu',
         *args,
@@ -50,8 +51,9 @@ class DPRReaderRanker(Executor):
             with their titles (to mirror the method used in training of the original model)
         :param num_spans_per_match: Number of spans to extract per match
         :param max_length: Max length argument for the tokenizer
-        :param traversal_paths: Default traversal paths for processing documents,
+        :param access_paths: Default traversal paths for processing documents,
             used if the traversal path is not passed as a parameter with the request.
+        :param traversal_paths: please use access_paths
         :param batch_size: Default batch size for processing documents, used if the
             batch size is not passed as a parameter with the request.
         :param device: The device (cpu or gpu) that the model should be on.
@@ -70,7 +72,13 @@ class DPRReaderRanker(Executor):
 
         self.model = self.model.to(torch.device(self.device)).eval()
 
-        self.traversal_paths = traversal_paths
+        if traversal_paths is not None:
+            self.access_paths = traversal_paths
+            warnings.warn("'traversal_paths' will be deprecated in the future, please use 'access_paths'.",
+                          DeprecationWarning,
+                          stacklevel=2)
+        else:
+            self.access_paths = access_paths
         self.batch_size = batch_size
 
     @requests
@@ -98,26 +106,26 @@ class DPRReaderRanker(Executor):
             `text` attribute is taken as the question, and the `text` attribute
             of the matches as the context. If you specified `title_tag_key` at
             initialization, the matches must also have a title (under this tag).
-        :param parameters: dictionary to define the `traversal_paths` and the
+        :param parameters: dictionary to define the `access_paths` and the
             `batch_size`. For example
-            `parameters={'traversal_paths': 'r', 'batch_size': 10}`
+            `parameters={'access_paths': 'r', 'batch_size': 10}`
         """
 
         if not docs:
             return None
 
-        traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
+        access_paths = parameters.get('access_paths', self.access_paths)
         batch_size = parameters.get('batch_size', self.batch_size)
 
         for doc in docs.traverse_flat(
-            traversal_paths, filter_fn=lambda x: bool(x.text)
+            access_paths, filter_fn=lambda x: bool(x.text)
         ):
             new_matches = []
 
             doc_arr = DocumentArray([doc])
 
             match_batches_generator = doc_arr.traverse_flat(
-                traversal_paths='m', filter_fn=lambda x: bool(x.text)
+                access_paths='m', filter_fn=lambda x: bool(x.text)
             ).batch(batch_size=batch_size)
 
             for matches in match_batches_generator:
