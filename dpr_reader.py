@@ -30,7 +30,7 @@ class DPRReaderRanker(Executor):
         title_tag_key: Optional[str] = None,
         num_spans_per_match: int = 2,
         max_length: Optional[int] = None,
-        access_paths: str = 'r',
+        access_paths: str = '@r',
         traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         device: str = 'cpu',
@@ -110,26 +110,28 @@ class DPRReaderRanker(Executor):
             `batch_size`. For example
             `parameters={'access_paths': 'r', 'batch_size': 10}`
         """
+        access_paths = parameters.get('traversal_paths', None)
+        if access_paths is not None:
+            import warnings
+            warnings.warn(
+                f'`traversal_paths` is renamed to `access_paths` with the same usage, please use the latter instead. '
+                f'`traversal_paths` will be removed soon.',
+                DeprecationWarning,
+            )
+            parameters['access_paths'] = access_paths
 
-        if not docs:
-            return None
-
-        access_paths = parameters.get('access_paths', self.access_paths)
         batch_size = parameters.get('batch_size', self.batch_size)
 
-        for doc in docs.traverse_flat(
-            access_paths, filter_fn=lambda x: bool(x.text)
-        ):
+        for doc in docs[parameters.get("access_paths", self.access_paths)]:
+            if not doc.text:
+                continue
             new_matches = []
-
-            doc_arr = DocumentArray([doc])
-
-            match_batches_generator = doc_arr.traverse_flat(
-                access_paths='m', filter_fn=lambda x: bool(x.text)
-            ).batch(batch_size=batch_size)
-
+            match_batches_generator = DocumentArray(filter(
+                lambda x: bool(x.text),
+                docs['@m']
+            )).batch(batch_size=batch_size)
             for matches in match_batches_generator:
-                question, titles = self._prepare_inputs(doc_arr[0].text, matches)
+                question, titles = self._prepare_inputs(doc.text, matches)
                 with torch.inference_mode():
                     new_matches += self._get_new_matches(question, matches, titles)
 
@@ -143,11 +145,11 @@ class DPRReaderRanker(Executor):
             )
 
             # Replace previous matches with actual answers
-            doc_arr[0].matches = new_matches
+            doc.matches = new_matches
 
     def _prepare_inputs(
         self, question: str, matches: DocumentArray
-    ) -> Tuple[str, List[str], Optional[List[str]]]:
+    ) -> Tuple[str, List[str]]:
 
         titles = None
         if self.title_tag_key:
