@@ -122,7 +122,7 @@ class DPRReaderRanker(Executor):
 
         batch_size = parameters.get('batch_size', self.batch_size)
 
-        for doc in docs[parameters.get("access_paths", self.access_paths)]:
+        for doc in docs[parameters.get('access_paths', self.access_paths)]:
             if not doc.text:
                 continue
             new_matches = []

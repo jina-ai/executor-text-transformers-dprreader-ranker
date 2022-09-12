@@ -46,13 +46,9 @@ def example_docs(request) -> DocumentArray:
 def test_config():
     encoder = Executor.load_config(str(Path(__file__).parents[2] / 'config.yml'))
     assert encoder.batch_size == 32
-    assert encoder.access_paths == 'r'
+    assert encoder.access_paths == '@r'
     assert encoder.title_tag_key is None
     assert encoder.num_spans_per_match == 2
-
-
-def test_no_document(basic_ranker: DPRReaderRanker):
-    basic_ranker.rank(None, {})
 
 
 def test_empty_documents(basic_ranker: DPRReaderRanker):
@@ -164,26 +160,26 @@ def test_batch_size(
 
 
 @pytest.mark.parametrize('example_docs', [10], indirect=['example_docs'])
-@pytest.mark.parametrize('access_paths', ['r','m','m,c'])
+@pytest.mark.parametrize('access_paths', ['@r','@m','@m,c'])
 def test_access_paths(
     basic_ranker: DPRReaderRanker,
     access_paths: List[str],
     example_docs: DocumentArray,
 ):
     # Set up document structure
-    if access_paths == 'r':
+    if access_paths == '@r':
         docs = example_docs
-    elif access_paths == 'm':
+    elif access_paths == '@m':
         docs = DocumentArray([Document()])
         docs[0].matches.extend(example_docs)
-    elif access_paths == 'm,c':
+    elif access_paths == '@m,c':
         docs = DocumentArray([Document()])
         docs[0].matches.extend(example_docs[:5])
         docs[0].chunks.extend(example_docs[5:])
 
     basic_ranker.rank(docs, parameters={'access_paths': access_paths})
 
-    for doc in docs.traverse_flat(access_paths):
+    for doc in docs[access_paths]:
         # A quirk related to how HF chooses spans/overlapping
         assert len(doc.matches) in [20, 19]
         assert 'relevance_score' in doc.matches[0].scores
