@@ -128,7 +128,7 @@ class DPRReaderRanker(Executor):
             new_matches = []
             match_batches_generator = DocumentArray(filter(
                 lambda x: bool(x.text),
-                docs['@m']
+                doc.matches
             )).batch(batch_size=batch_size)
             for matches in match_batches_generator:
                 question, titles = self._prepare_inputs(doc.text, matches)
